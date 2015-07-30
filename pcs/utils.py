@@ -1,9 +1,10 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import os, subprocess
 import sys
 import xml.dom.minidom
 import ssl
 import inspect
-import urllib,urllib2
 from xml.dom.minidom import parseString,parse
 import xml.etree.ElementTree as ET
 import re
@@ -11,10 +12,26 @@ import json
 import tempfile
 import signal
 import time
-import cStringIO
 import tarfile
 import fcntl
 import getpass
+
+try: # Python 2
+    from urllib import urlencode
+except ImportError: # Python 3
+    from urllib.parse import urlencode
+
+try: # Python 2
+    from urllib2 import build_opener, install_opener, HTTPCookieProcessor, HTTPError, \
+                        HTTPSHandler, URLError
+except ImportError: # Python 3
+    from urllib.request import build_opener, install_opener, HTTPCookieProcessor, HTTPSHandler
+    from urllib.error import HTTPError, URLError
+
+try: # Python 2
+    import cStringIO
+except ImportError: # Python 2 + 3
+    from io import StringIO
 
 import settings
 import pcs
@@ -22,6 +39,7 @@ import resource
 import cluster
 import corosync_conf as corosync_conf_utils
 
+PYTHON2 = sys.version[0] == '2'
 
 # usefile & filename variables are set in pcs module
 usefile = False
@@ -30,6 +48,7 @@ pcs_options = {}
 fence_bin = settings.fence_agent_binaries
 
 score_regexp = re.compile(r'^[+-]?((INFINITY)|(\d+))$')
+
 
 def getValidateWithVersion(dom):
     cib = dom.getElementsByTagName("cib")
@@ -153,12 +172,12 @@ def getCorosyncConfig(node):
 
 def setCorosyncConfig(node,config):
     if is_rhel6():
-        data = urllib.urlencode({'cluster_conf':config})
+        data = urlencode({'cluster_conf':config})
         (status, data) = sendHTTPRequest(node, 'remote/set_cluster_conf', data)
         if status != 0:
             err("Unable to set cluster.conf")
     else:
-        data = urllib.urlencode({'corosync_conf':config})
+        data = urlencode({'corosync_conf':config})
         (status, data) = sendHTTPRequest(node, 'remote/set_corosync_conf', data)
         if status != 0:
             err("Unable to set corosync config")
@@ -174,7 +193,7 @@ def stopCluster(node, quiet=False, pacemaker=True, corosync=True, force=True):
         data["component"] = "corosync"
     if force:
         data["force"] = 1
-    data = urllib.urlencode(data)
+    data = urlencode(data)
     return sendHTTPRequest(node, 'remote/cluster_stop', data, False, not quiet)
 
 def enableCluster(node):
@@ -187,15 +206,15 @@ def destroyCluster(node, quiet=False):
     return sendHTTPRequest(node, 'remote/cluster_destroy', None, not quiet, not quiet)
 
 def restoreConfig(node, tarball_data):
-    data = urllib.urlencode({"tarball": tarball_data})
+    data = urlencode({"tarball": tarball_data})
     return sendHTTPRequest(node, "remote/config_restore", data, False, True)
 
 def pauseConfigSyncing(node, delay_seconds=300):
-  data = urllib.urlencode({"sync_thread_pause": delay_seconds})
+  data = urlencode({"sync_thread_pause": delay_seconds})
   return sendHTTPRequest(node, "remote/set_sync_options", data, False, False)
 
 def resumeConfigSyncing(node):
-  data = urllib.urlencode({"sync_thread_resume": 1})
+  data = urlencode({"sync_thread_resume": 1})
   return sendHTTPRequest(node, "remote/set_sync_options", data, False, False)
 
 def canAddNodeToCluster(node):
@@ -221,7 +240,7 @@ def addLocalNode(node, node_to_add, ring1_addr=None, alt_hostname=None):
     if alt_hostname:
         options['alt_hostname'] = alt_hostname
 
-    data = urllib.urlencode(options)
+    data = urlencode(options)
     retval, output = sendHTTPRequest(node, 'remote/add_node', data, False, False)
     if retval == 0:
         try:
@@ -235,7 +254,7 @@ def addLocalNode(node, node_to_add, ring1_addr=None, alt_hostname=None):
         return 1, output
 
 def removeLocalNode(node, node_to_remove, pacemaker_remove=False):
-    data = urllib.urlencode({'remove_nodename':node_to_remove, 'pacemaker_remove':pacemaker_remove})
+    data = urlencode({'remove_nodename':node_to_remove, 'pacemaker_remove':pacemaker_remove})
     retval, output = sendHTTPRequest(node, 'remote/remove_node', data, False, False)
     if retval == 0:
         try:
@@ -262,48 +281,48 @@ def sendHTTPRequest(host, request, data = None, printResult = True, printSuccess
     if (
         hasattr(ssl, "_create_unverified_context")
         and
-        "context" in inspect.getargspec(urllib2.HTTPSHandler.__init__).args
+        "context" in inspect.getargspec(HTTPSHandler.__init__).args
     ):
-        opener = urllib2.build_opener(
-            urllib2.HTTPSHandler(context=ssl._create_unverified_context()),
-            urllib2.HTTPCookieProcessor()
+        opener = build_opener(
+            HTTPSHandler(context=ssl._create_unverified_context()),
+            HTTPCookieProcessor()
         )
     else:
-        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
+        opener = build_opener(HTTPCookieProcessor())
     tokens = readTokens()
     if "--debug" in pcs_options:
-        print "Sending HTTP Request to: " + url
-        print "Data: " + str(data)
+        print("Sending HTTP Request to: " + url)
+        print("Data: " + str(data))
     if host in tokens:
         opener.addheaders.append(('Cookie', 'token='+tokens[host]))
-    urllib2.install_opener(opener)
+    install_opener(opener)
     try:
         result = opener.open(url,data)
         html = result.read()
         if printResult or printSuccess:
-            print host + ": " + html.strip()
+            print(host + ": " + html.strip())
         if "--debug" in pcs_options:
-            print "Response Code: 0"
-            print "--Debug Response Start--\n" + html,
-            print "--Debug Response End--"
+            print("Response Code: 0")
+            print("--Debug Response Start--\n" + html, end=' ')
+            print("--Debug Response End--")
         return (0,html)
-    except urllib2.HTTPError, e:
+    except HTTPError as e:
         if "--debug" in pcs_options:
-            print "Response Code: " + str(e.code)
+            print("Response Code: " + str(e.code))
         if printResult:
             if e.code == 401:
-                print "Unable to authenticate to %s - (HTTP error: %d), try running 'pcs cluster auth'" % (host,e.code)
+                print("Unable to authenticate to %s - (HTTP error: %d), try running 'pcs cluster auth'" % (host,e.code))
             else:
-                print "Error connecting to %s - (HTTP error: %d)" % (host,e.code)
+                print("Error connecting to %s - (HTTP error: %d)" % (host,e.code))
         if e.code == 401:
             return (3,"Unable to authenticate to %s - (HTTP error: %d), try running 'pcs cluster auth'" % (host,e.code))
         else:
             return (1,"Error connecting to %s - (HTTP error: %d)" % (host,e.code))
-    except urllib2.URLError, e:
+    except URLError as e:
         if "--debug" in pcs_options:
-            print "Response Reason: " + str(e.reason)
+            print("Response Reason: " + str(e.reason))
         if printResult:
-            print "Unable to connect to %s (%s)" % (host, e.reason)
+            print("Unable to connect to %s (%s)" % (host, e.reason))
         return (2,"Unable to connect to %s (%s)" % (host, e.reason))
 
 def getNodesFromCorosyncConf(conf_text=None):
@@ -406,7 +425,7 @@ def getCorosyncActiveNodes():
                 mapped_id = new_id
                 break
         if mapped_id == None:
-            print "Error mapping %s" % node
+            print("Error mapping %s" % node)
             continue
         for new_id, status in nodes_status:
             if new_id == mapped_id:
@@ -470,7 +489,7 @@ def addNodeToClusterConf(node):
 
     output, retval = run(["/usr/sbin/ccs", "-f", settings.cluster_conf_file, "--addnode", node0])
     if retval != 0:
-        print output
+        print(output)
         err("error adding node: %s" % node0)
 
     if node1:
@@ -479,19 +498,19 @@ def addNodeToClusterConf(node):
             "--addalt", node0, node1
         ])
         if retval != 0:
-            print output
+            print(output)
             err(
                 "error adding alternative address for node: %s" % node0
             )
 
     output, retval = run(["/usr/sbin/ccs", "-i", "-f", settings.cluster_conf_file, "--addmethod", "pcmk-method", node0])
     if retval != 0:
-        print output
+        print(output)
         err("error adding fence method: %s" % node)
 
     output, retval = run(["/usr/sbin/ccs", "-i", "-f", settings.cluster_conf_file, "--addfenceinst", "pcmk-redirect", node0, "pcmk-method", "port="+node0])
     if retval != 0:
-        print output
+        print(output)
         err("error adding fence instance: %s" % node)
 
     if len(nodes) == 2:
@@ -504,7 +523,7 @@ def addNodeToClusterConf(node):
             + cman_options
         )
         if retval != 0:
-            print output
+            print(output)
             err("unable to set cman options")
 
     return True
@@ -539,7 +558,7 @@ def removeNodeFromClusterConf(node):
 
     output, retval = run(["/usr/sbin/ccs", "-f", settings.cluster_conf_file, "--rmnode", node0])
     if retval != 0:
-        print output
+        print(output)
         err("error removing node: %s" % node)
 
     if len(nodes) == 3:
@@ -553,7 +572,7 @@ def removeNodeFromClusterConf(node):
             + cman_options
         )
         if retval != 0:
-            print output
+            print(output)
             err("unable to set cman options: expected_votes and two_node")
     return True
 
@@ -686,10 +705,10 @@ def run(args, ignore_stderr=False, string_for_stdin=None, env_extend=None):
         
     try:
         if "--debug" in pcs_options:
-            print "Running: " + " ".join(args)
+            print("Running: " + " ".join(args))
             if string_for_stdin:
-                print "--Debug Input Start--\n" + string_for_stdin
-                print "--Debug Input End--\n"
+                print("--Debug Input Start--\n" + string_for_stdin)
+                print("--Debug Input End--\n")
 
         # Some commands react differently if you give them anything via stdin
         if string_for_stdin != None:
@@ -704,12 +723,15 @@ def run(args, ignore_stderr=False, string_for_stdin=None, env_extend=None):
         output,stderror = p.communicate(string_for_stdin)
         returnVal = p.returncode
         if "--debug" in pcs_options:
-            print "Return Value: " + str(returnVal)
-            print "--Debug Output Start--\n" + output
-            print "--Debug Output End--\n"
+            print("Return Value: " + str(returnVal))
+            print("--Debug Output Start--\n" + output)
+            print("--Debug Output End--\n")
     except OSError as e:
-        print e.strerror
+        print(e.strerror)
         err("unable to locate command: " + args[0])
+
+    if not PYTHON2:
+        output = output.decode('utf-8')
 
     return output, returnVal
 
@@ -754,18 +776,18 @@ def call_local_pcsd(argv, interactive_auth=False, std_in=None):
     }
     if std_in:
         data['stdin'] = std_in
-    data_send = urllib.urlencode(data)
+    data_send = urlencode(data)
     code, output = sendHTTPRequest(
         "localhost", "run_pcs", data_send, False, False
     )
 
     # authenticate against local pcsd and run again
     if interactive_auth and 3 == code: # not authenticated
-        print 'Please authenticate yourself to the local pcsd'
+        print('Please authenticate yourself to the local pcsd')
         username = get_terminal_input('Username: ')
         password = get_terminal_password()
         cluster.auth_nodes_do(["localhost"], username, password, True, True)
-        print
+        print()
         code, output = sendHTTPRequest(
             "localhost", "run_pcs", data_send, False, False
         )
@@ -816,7 +838,7 @@ def run_node_threads(node_threads):
             if thread.is_alive():
                 continue
             output = node + ": " + thread.output.strip()
-            print output
+            print(output)
             if thread.retval != 0:
                 error_list.append(output)
             del node_threads[node]
@@ -1552,7 +1574,7 @@ def setAttribute(a_type, a_name, a_value):
 
     output, retval = run(args)
     if retval != 0:
-        print output
+        print(output)
 
 def getTerminalSize(fd=1):
     """
@@ -1577,7 +1599,10 @@ def get_terminal_input(message=None):
     if message:
         sys.stdout.write('Username: ')
         sys.stdout.flush()
-    return raw_input("")
+    if PYTHON2:
+        return raw_input("")
+    else:
+        return input("")
 
 def get_terminal_password(message="Password: "):
     if sys.stdout.isatty():
@@ -1901,14 +1926,14 @@ def err(errorText, exit_after_error=True):
 
 def serviceStatus(prefix):
     if is_systemctl():
-        print "Daemon Status:"
+        print("Daemon Status:")
         daemons = ["corosync", "pacemaker", "pcsd"]
         out, ret = run(["systemctl", "is-active"] + daemons)
         status = out.split("\n")
         out, ret = run(["systemctl", "is-enabled"]+ daemons)
         enabled = out.split("\n")
         for i in range(len(daemons)):
-            print prefix + daemons[i] + ": " + status[i] + "/" + enabled[i]
+            print(prefix + daemons[i] + ": " + status[i] + "/" + enabled[i])
 
 def enableServices():
     if is_rhel6():
@@ -1934,7 +1959,7 @@ def disableServices():
             run(["chkconfig", "corosync", "off"])
             run(["chkconfig", "pacemaker", "off"])
 
-def write_file(path, data, permissions=0644):
+def write_file(path, data, permissions=0o644):
     if os.path.exists(path):
         if not "--force" in pcs_options:
             return False, "'%s' already exists, use --force to overwrite" % path
@@ -2100,7 +2125,7 @@ def parse_cman_quorum_info(cman_info):
                     continue
                 if not ":" in line:
                     continue
-                parts = map(lambda x: x.strip(), line.split(":", 1))
+                parts = [x.strip() for x in line.split(":", 1)]
                 if parts[0] == "Quorum":
                     parsed["quorate"] = "Activity blocked" not in parts[1]
                     match = re.match("(\d+).*", parts[1])
@@ -2142,7 +2167,7 @@ def parse_quorumtool_output(quorumtool_output):
                     continue
                 if not ":" in line:
                     continue
-                parts = map(lambda x: x.strip(), line.split(":", 1))
+                parts = [x.strip() for x in line.split(":", 1)]
                 if parts[0] == "Quorate":
                     parsed["quorate"] = parts[1].lower() == "yes"
                 elif parts[0] == "Quorum":
