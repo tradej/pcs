@@ -7,13 +7,17 @@ ifneq ($(python_version_major_minor),2.6)
   pyunit_flags = -f
 endif
 
+ifndef $(PYTHON)
+	PYTHON = python2
+endif
+
 test:
-	python2 test_utils.py ${pyunit_flags}
-	python2 test_corosync_conf.py ${pyunit_flags}
-	python2 test_cluster.py ${pyunit_flags}
-	python2 test_resource.py ${pyunit_flags}
-	python2 test_rule.py ${pyunit_flags}
-	python2 test_constraints.py ${pyunit_flags}
-	python2 test_stonith.py ${pyunit_flags}
-	python2 test_properties.py ${pyunit_flags}
-	python2 test_acl.py ${pyunit_flags}
+	$(PYTHON) test_utils.py ${pyunit_flags}
+	$(PYTHON) test_corosync_conf.py ${pyunit_flags}
+	$(PYTHON) test_cluster.py ${pyunit_flags}
+	$(PYTHON) test_resource.py ${pyunit_flags}
+	$(PYTHON) test_rule.py ${pyunit_flags}
+	$(PYTHON) test_constraints.py ${pyunit_flags}
+	$(PYTHON) test_stonith.py ${pyunit_flags}
+	$(PYTHON) test_properties.py ${pyunit_flags}
+	$(PYTHON) test_acl.py ${pyunit_flags}
