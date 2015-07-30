@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import usage
 import utils
@@ -41,10 +43,10 @@ def acl_show(argv):
     properties = prop.get_set_properties(defaults=prop.get_default_properties())
     acl_enabled = properties.get("enable-acl", "").lower()
     if utils.is_cib_true(acl_enabled):
-        print "ACLs are enabled"
+        print("ACLs are enabled")
     else:
-        print "ACLs are disabled, run 'pcs acl enable' to enable"
-    print
+        print("ACLs are disabled, run 'pcs acl enable' to enable")
+    print()
 
     print_targets(dom)
     print_groups(dom)
@@ -57,7 +59,7 @@ def acl_disable(argv):
     prop.set_property(["enable-acl=false"])
 
 def acl_grant(argv):
-    print "Not yet implemented"
+    print("Not yet implemented")
 
 def acl_role(argv):
     if len(argv) < 2:
@@ -315,35 +317,35 @@ def acl_permission(argv):
 
 def print_groups(dom):
     for elem in dom.getElementsByTagName("acl_group"):
-        print "Group: " + elem.getAttribute("id")
-        print "  Roles:",
+        print("Group: " + elem.getAttribute("id"))
+        print("  Roles:", end=' ')
         role_list = []
         for role in elem.getElementsByTagName("role"):
             role_list.append(role.getAttribute("id"))
-        print " ".join(role_list)
+        print(" ".join(role_list))
 
 def print_targets(dom):
     for elem in dom.getElementsByTagName("acl_target"):
-        print "User: " + elem.getAttribute("id")
-        print "  Roles:",
+        print("User: " + elem.getAttribute("id"))
+        print("  Roles:", end=' ')
         role_list = []
         for role in elem.getElementsByTagName("role"):
             role_list.append(role.getAttribute("id"))
-        print " ".join(role_list)
+        print(" ".join(role_list))
 
 def print_roles(dom):
     for elem in dom.getElementsByTagName("acl_role"):
-        print "Role: " + elem.getAttribute("id")
+        print("Role: " + elem.getAttribute("id"))
         if elem.getAttribute("description"):
-            print "  Description: " + elem.getAttribute("description")
+            print("  Description: " + elem.getAttribute("description"))
         for perm in elem.getElementsByTagName("acl_permission"):
             perm_name = "  Permission: " + perm.getAttribute("kind")
-            if "xpath" in perm.attributes.keys():
+            if "xpath" in list(perm.attributes.keys()):
                 perm_name += " xpath " + perm.getAttribute("xpath")
-            elif "reference" in perm.attributes.keys():
+            elif "reference" in list(perm.attributes.keys()):
                 perm_name += " id " + perm.getAttribute("reference")
             perm_name += " (" + perm.getAttribute("id") + ")"
-            print perm_name
+            print(perm_name)
 
 def get_acls(dom):        
     acls = dom.getElementsByTagName("acls")
