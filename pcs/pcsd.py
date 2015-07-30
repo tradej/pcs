@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import json
 import os
@@ -50,33 +52,33 @@ def pcsd_certkey(argv):
 
     try:
         try:
-            os.chmod(settings.pcsd_cert_location, 0700)
+            os.chmod(settings.pcsd_cert_location, 0o700)
         except OSError: # If the file doesn't exist, we don't care
             pass
 
         try:
-            os.chmod(settings.pcsd_key_location, 0700)
+            os.chmod(settings.pcsd_key_location, 0o700)
         except OSError: # If the file doesn't exist, we don't care
             pass
 
-        with os.fdopen(os.open(settings.pcsd_cert_location, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0700), 'wb') as myfile:
+        with os.fdopen(os.open(settings.pcsd_cert_location, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o700), 'wb') as myfile:
             myfile.write(cert)
 
-        with os.fdopen(os.open(settings.pcsd_key_location, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0700), 'wb') as myfile:
+        with os.fdopen(os.open(settings.pcsd_key_location, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o700), 'wb') as myfile:
             myfile.write(key)
 
     except IOError as e:
         utils.err(e)
 
-    print "Certificate and key updated, you may need to restart pcsd (service pcsd restart) for new settings to take effect"
+    print("Certificate and key updated, you may need to restart pcsd (service pcsd restart) for new settings to take effect")
 
 def pcsd_sync_certs(argv):
     nodes = utils.getNodesFromCorosyncConf()
-    print (
+    print((
         "Synchronizing pcsd certificates on nodes {0}. pcsd needs to be "
         "restarted on the nodes in order to reload the certificates."
-    ).format(", ".join(nodes))
-    print
+    ).format(", ".join(nodes)))
+    print()
     pcsd_data = {'nodes': nodes}
     for cmd in ['send_local_certs', 'pcsd_restart_nodes']:
         error = ''
@@ -118,5 +120,5 @@ def pcsd_clear_auth(argv):
 
     if len(output) > 0:
         for o in output:
-            print "Error: " + o
+            print("Error: " + o)
         sys.exit(1)
