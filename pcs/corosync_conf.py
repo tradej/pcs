@@ -28,7 +28,7 @@ class Section(object):
             if index < section_count:
                 lines.append("")
         if self.parent:
-            lines = map(lambda x: indent + x if x else x, lines)
+            lines = [indent + x if x else x for x in lines]
             lines.insert(0, self.name + " {")
             lines.append("}")
         final = "\n".join(lines)
@@ -130,7 +130,7 @@ def _parse_section(lines, section):
             return
         elif ":" in current_line:
             section.add_attribute(
-                *map(lambda x: x.strip(), current_line.split(":", 1))
+                *[x.strip() for x in current_line.split(":", 1)]
             )
     if section.parent:
         raise ParseErrorException("Missing closing brace")
