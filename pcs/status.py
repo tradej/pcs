@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import os
 import xml.dom.minidom
@@ -48,7 +50,7 @@ def full_status():
 
     if not utils.usefile or "--corosync_conf" in utils.pcs_options:
         cluster_name = utils.getClusterName()
-        print "Cluster name: %s" % cluster_name
+        print("Cluster name: %s" % cluster_name)
 
     if utils.stonithCheck():
         print("WARNING: no stonith devices and stonith-enabled is not false")
@@ -56,37 +58,37 @@ def full_status():
     if utils.corosyncPacemakerNodeCheck():
         print("WARNING: corosync and pacemaker node names do not match (IPs used in setup?)")
 
-    print output
+    print(output)
 
     if not utils.usefile:
         print_pcsd_daemon_status()
-        print
+        print()
         utils.serviceStatus("  ")
 
 # Parse crm_mon for status
 def nodes_status(argv):
     if len(argv) == 1 and argv[0] == "pacemaker-id":
         for node_id, node_name in utils.getPacemakerNodesID().items():
-            print "{0} {1}".format(node_id, node_name)
+            print("{0} {1}".format(node_id, node_name))
         return
 
     if len(argv) == 1 and argv[0] == "corosync-id":
         for node_id, node_name in utils.getCorosyncNodesID().items():
-            print "{0} {1}".format(node_id, node_name)
+            print("{0} {1}".format(node_id, node_name))
         return
 
     if len(argv) == 1 and (argv[0] == "config"):
         corosync_nodes = utils.getNodesFromCorosyncConf()
         pacemaker_nodes = utils.getNodesFromPacemaker()
-        print "Corosync Nodes:"
-        print "",
+        print("Corosync Nodes:")
+        print("", end=' ')
         for node in corosync_nodes:
-            print node.strip(),
-        print ""
-        print "Pacemaker Nodes:"
-        print "",
+            print(node.strip(), end=' ')
+        print("")
+        print("Pacemaker Nodes:")
+        print("", end=' ')
         for node in pacemaker_nodes:
-            print node.strip(),
+            print(node.strip(), end=' ')
 
         return
 
@@ -102,15 +104,15 @@ def nodes_status(argv):
 
         online_nodes.sort()
         offline_nodes.sort()
-        print "Corosync Nodes:"
-        print " Online:",
+        print("Corosync Nodes:")
+        print(" Online:", end=' ')
         for node in online_nodes:
-            print node,
-        print ""
-        print " Offline:",
+            print(node, end=' ')
+        print("")
+        print(" Offline:", end=' ')
         for node in offline_nodes:
-            print node,
-        print ""
+            print(node, end=' ')
+        print("")
         if argv[0] != "both":
             sys.exit(0)
 
@@ -132,28 +134,28 @@ def nodes_status(argv):
         else:
             offlinenodes.append(node.getAttribute("name"))
 
-    print "Pacemaker Nodes:"
+    print("Pacemaker Nodes:")
 
-    print " Online:",
+    print(" Online:", end=' ')
     for node in onlinenodes:
-        print node,
-    print ""
+        print(node, end=' ')
+    print("")
 
-    print " Standby:",
+    print(" Standby:", end=' ')
     for node in standbynodes:
-        print node,
-    print ""
+        print(node, end=' ')
+    print("")
 
-    print " Offline:",
+    print(" Offline:", end=' ')
     for node in offlinenodes:
-        print node,
-    print ""
+        print(node, end=' ')
+    print("")
 
 # TODO: Remove, currently unused, we use status from the resource.py
 def resources_status(argv):
     info_dom = utils.getClusterState()
 
-    print "Resources:"
+    print("Resources:")
 
     resources = info_dom.getElementsByTagName("resources")
     if resources.length == 0:
@@ -166,9 +168,9 @@ def resources_status(argv):
             for node in nodes:
                 node_line += node.getAttribute("name") + " "
 
-        print "", resource.getAttribute("id"),
-        print "(" + resource.getAttribute("resource_agent") + ")",
-        print "- " + resource.getAttribute("role") + " " + node_line
+        print("", resource.getAttribute("id"), end=' ')
+        print("(" + resource.getAttribute("resource_agent") + ")", end=' ')
+        print("- " + resource.getAttribute("role") + " " + node_line)
 
 def cluster_status(argv):
     (output, retval) = utils.run(["crm_mon", "-1", "-r"])
@@ -177,7 +179,7 @@ def cluster_status(argv):
         utils.err("cluster is not currently running on this node")
 
     first_empty_line = False
-    print "Cluster Status:"
+    print("Cluster Status:")
     for line in output.splitlines():
         if line == "":
             if first_empty_line:
@@ -185,10 +187,10 @@ def cluster_status(argv):
             first_empty_line = True
             continue
         else:
-            print "",line
+            print("",line)
 
     if not utils.usefile:
-        print
+        print()
         print_pcsd_daemon_status()
 
 def corosync_status():
@@ -196,14 +198,14 @@ def corosync_status():
     if retval != 0:
         utils.err("corosync not running")
     else:
-        print output,
+        print(output, end=' ')
 
 def xml_status():
     (output, retval) = utils.run(["crm_mon", "-1", "-r", "-X"])
 
     if (retval != 0):
         utils.err("running crm_mon, is pacemaker running?")
-    print output
+    print(output)
 
 def is_cman_running():
     if utils.is_systemctl():
@@ -227,7 +229,7 @@ def is_pacemaker_running():
     return retval == 0
 
 def print_pcsd_daemon_status():
-    print "PCSD Status:"
+    print("PCSD Status:")
     if os.getuid() == 0:
         cluster.cluster_gui_status([], True)
     else:
@@ -236,9 +238,9 @@ def print_pcsd_daemon_status():
         )
         if err_msgs:
             for msg in err_msgs:
-                print msg
+                print(msg)
         if 0 == exitcode:
-            print std_out
+            print(std_out)
         else:
-            print "Unable to get PCSD status"
+            print("Unable to get PCSD status")
 
