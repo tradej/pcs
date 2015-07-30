@@ -1,9 +1,10 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import os
 import os.path
 import re
 import datetime
-import cStringIO
 import tarfile
 import json
 from xml.dom.minidom import parse
@@ -11,6 +12,11 @@ import logging
 import pwd
 import grp
 import time
+
+try:
+    import cStringIO
+except ImportError:
+    from io import StringIO
 
 logging.basicConfig() # clufter needs logging set before imported
 try:
@@ -63,34 +69,34 @@ def config_cmd(argv):
         sys.exit(1)
 
 def config_show(argv):
-    print "Cluster Name: %s" % utils.getClusterName()
+    print("Cluster Name: %s" % utils.getClusterName())
     status.nodes_status(["config"])
-    print ""
-    print ""
+    print("")
+    print("")
     config_show_cib()
     cluster.cluster_uidgid([], True)
 
 def config_show_cib():
-    print "Resources: "
+    print("Resources: ")
     utils.pcs_options["--all"] = 1
     utils.pcs_options["--full"] = 1
     resource.resource_show([])
-    print ""
-    print "Stonith Devices: "
+    print("")
+    print("Stonith Devices: ")
     resource.resource_show([], True)
-    print "Fencing Levels: "
-    print ""
+    print("Fencing Levels: ")
+    print("")
     stonith.stonith_level_show()
     constraint.location_show([])
     constraint.order_show([])
     constraint.colocation_show([])
-    print ""
+    print("")
     del utils.pcs_options["--all"]
-    print "Resources Defaults:"
+    print("Resources Defaults:")
     resource.show_defaults("rsc_defaults", indent=" ")
-    print "Operations Defaults:"
+    print("Operations Defaults:")
     resource.show_defaults("op_defaults", indent=" ")
-    print
+    print()
     prop.list_property([])
 
 def config_backup(argv):
@@ -106,7 +112,7 @@ def config_backup(argv):
 
     tar_data = config_backup_local()
     if outfile_name:
-        ok, message = utils.write_file(outfile_name, tar_data, 0600)
+        ok, message = utils.write_file(outfile_name, tar_data, 0o600)
         if not ok:
             utils.err(message)
     else:
@@ -167,7 +173,7 @@ def config_restore(argv):
             for msg in err_msgs:
                 utils.err(msg, False)
             sys.exit(1)
-        print std_out
+        print(std_out)
         sys.stderr.write(std_err)
         sys.exit(exitcode)
 
@@ -180,7 +186,7 @@ def config_restore_remote(infile_name, infile_obj):
     try:
         tarball = tarfile.open(infile_name, "r|*", infile_obj)
         while True:
-            tar_member_info = tarball.next()
+            tar_member_info = next(tarball)
             if tar_member_info is None:
                 break
             if tar_member_info.name in extracted:
@@ -263,7 +269,7 @@ def config_restore_local(infile_name, infile_obj):
     try:
         tarball = tarfile.open(infile_name, "r|*", infile_obj)
         while True:
-            tar_member_info = tarball.next()
+            tar_member_info = next(tarball)
             if tar_member_info is None:
                 break
             if tar_member_info.name == "version.txt":
@@ -292,7 +298,7 @@ def config_restore_local(infile_name, infile_obj):
             infile_obj.seek(0)
         tarball = tarfile.open(infile_name, "r|*", infile_obj)
         while True:
-            tar_member_info = tarball.next()
+            tar_member_info = next(tarball)
             if tar_member_info is None:
                 break
             extract_info = None
@@ -325,7 +331,7 @@ def config_backup_path_list(with_uid_gid=False, force_rhel6=None):
     rhel6 = utils.is_rhel6() if force_rhel6 is None else force_rhel6
     corosync_attrs = {
         "mtime": int(time.time()),
-        "mode": 0644,
+        "mode": 0o644,
         "uname": "root",
         "gname": "root",
         "uid": 0,
@@ -333,7 +339,7 @@ def config_backup_path_list(with_uid_gid=False, force_rhel6=None):
     }
     cib_attrs = {
         "mtime": int(time.time()),
-        "mode": 0600,
+        "mode": 0o600,
         "uname": settings.pacemaker_uname,
         "gname": settings.pacemaker_gname,
     }
@@ -427,7 +433,7 @@ def config_checkpoint_list():
             pass
     cib_list.sort()
     if not cib_list:
-        print "No checkpoints available"
+        print("No checkpoints available")
         return
     for cib_info in cib_list:
         print(
@@ -549,7 +555,7 @@ def config_import_cman(argv):
         file_item["attrs"]["gname"] = "root"
         file_item["attrs"]["uid"] = 0
         file_item["attrs"]["gid"] = 0
-        file_item["attrs"]["mode"] = 0600
+        file_item["attrs"]["mode"] = 0o600
     tar_data = cStringIO.StringIO()
     try:
         tarball = tarfile.open(fileobj=tar_data, mode="w|bz2")
@@ -605,7 +611,7 @@ def config_import_cman(argv):
 
     #save tarball / remote restore
     if dry_run_output:
-        ok, message = utils.write_file(dry_run_output, tar_data.read(), 0600)
+        ok, message = utils.write_file(dry_run_output, tar_data.read(), 0o600)
         if not ok:
             utils.err(message)
     else:
