@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import socket
 import os
 import sys
@@ -9,7 +11,7 @@ if not e:
 if e.startswith('@'):
   # abstract namespace socket
   e = '\0%s' % e[1:]
-print e
+print(e)
 s.connect(e)
 s.sendall("READY=1")
 s.close()
