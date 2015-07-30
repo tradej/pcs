@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import usage
 import utils
@@ -27,7 +29,7 @@ def set_property(argv):
     for arg in argv:
         args = arg.split('=')
         if (len(args) != 2):
-            print "Invalid Property: " + arg
+            print("Invalid Property: " + arg)
             continue
         if "--node" in utils.pcs_options:
             utils.set_node_attribute(args[0], args[1], utils.pcs_options["--node"])
@@ -68,18 +70,18 @@ def list_property(argv):
             properties
         )
 
-    print "Cluster Properties:"
-    for prop,val in sorted(properties.iteritems()):
-        print " " + prop + ": " + val
+    print("Cluster Properties:")
+    for prop,val in sorted(properties.items()):
+        print(" " + prop + ": " + val)
 
     node_attributes = utils.get_node_attributes()
     if node_attributes:
-        print "Node Attributes:"
+        print("Node Attributes:")
         for node in sorted(node_attributes):
-            print " " + node + ":",
+            print(" " + node + ":", end=' ')
             for attr in node_attributes[node]:
-                print attr,
-            print
+                print(attr, end=' ')
+            print()
 
 def get_default_properties():
     (output, retVal) = utils.run([settings.pengine_binary, "metadata"])
