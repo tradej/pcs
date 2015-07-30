@@ -1,4 +1,6 @@
 #!/usr/bin/python2
+from __future__ import absolute_import
+from __future__ import print_function
 
 import sys, getopt, os
 
@@ -96,8 +98,8 @@ def main(argv):
             prev_arg = arg
 
         pcs_options, argv = getopt.gnu_getopt(modified_argv, pcs_short_options, pcs_long_options)
-    except getopt.GetoptError, err:
-        print err
+    except getopt.GetoptError as err:
+        print(err)
         usage.main()
         sys.exit(1)
     argv = real_argv
@@ -123,7 +125,7 @@ def main(argv):
         elif o == "--cluster_conf":
             settings.cluster_conf_file = a
         elif o == "--version":
-            print settings.pcs_version
+            print(settings.pcs_version)
             sys.exit()
         elif o == "--fullhelp":
             usage.full_usage()
@@ -205,7 +207,7 @@ def main(argv):
                 for msg in err_msgs:
                     utils.err(msg, False)
                 sys.exit(1)
-            print std_out
+            print(std_out)
             sys.stderr.write(std_err)
             sys.exit(exitcode)
             return
