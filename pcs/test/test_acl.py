@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import os,sys
 import shutil
 import unittest
@@ -679,4 +681,4 @@ if __name__ == "__main__":
     if isMinimumPacemakerVersion(1,1,11):
         unittest.main()
     else:
-        print "WARNING: Pacemaker version is too old (must be >= 1.1.11) to test acls"
+        print("WARNING: Pacemaker version is too old (must be >= 1.1.11) to test acls")
