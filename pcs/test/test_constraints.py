@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import os,sys
 import shutil
 import unittest
@@ -218,7 +220,7 @@ Colocation Constraints:
 
     def testOrderConstraintRequireAll(self):
         if not isMinimumPacemakerVersion(1,1,12):
-            print "WARNING: Pacemaker version is too old (must be >= 1.1.12) to test require-all"
+            print("WARNING: Pacemaker version is too old (must be >= 1.1.12) to test require-all")
             return
 
         o,r = pcs("cluster cib-upgrade")
@@ -489,7 +491,7 @@ Colocation Constraints:
 
     def testConstraintResourceDiscovery(self):
         if not isMinimumPacemakerVersion(1,1,12):
-            print "WARNING: Pacemaker version is too old (must be >= 1.1.12) to test resource-discovery"
+            print("WARNING: Pacemaker version is too old (must be >= 1.1.12) to test resource-discovery")
             return
 
         o,r = pcs("resource create crd Dummy")
