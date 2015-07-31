@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os,sys
 import shutil
 import re
