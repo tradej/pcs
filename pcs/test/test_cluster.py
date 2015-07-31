@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import os,sys
 import shutil
 import unittest
@@ -2085,7 +2087,7 @@ Warning: --token_coefficient ignored as it is not supported on CMAN clusters
 
     def testClusterUpgrade(self):
         if not isMinimumPacemakerVersion(1,1,11):
-            print "WARNING: Unable to test cluster upgrade because pacemaker is older than 1.1.11"
+            print("WARNING: Unable to test cluster upgrade because pacemaker is older than 1.1.11")
             return
         with open(temp_cib) as myfile:
             data = myfile.read()
