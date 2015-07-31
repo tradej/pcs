@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import os,sys
 import difflib
 import subprocess
@@ -39,13 +41,15 @@ def ac(a,b):
     if a != b:
         d = difflib.Differ()
         diff = d.compare(b.splitlines(1),a.splitlines(1))
-        print ""
-        print "".join(diff)
+        print("")
+        print("".join(diff))
         assert False,[a]
 
 def isMinimumPacemakerVersion(cmajor,cminor,crev):
     p = subprocess.Popen(["crm_mon","--version"], stdout=subprocess.PIPE)
     (stdout, stderr) = p.communicate()
+    if not utils.PYTHON2:
+        stdout = stdout.decode('utf-8')
     pacemaker_version =  stdout.split("\n")[0]
     r = re.compile(r"Pacemaker (\d+)\.(\d+)\.(\d+)")
     m = r.match(pacemaker_version)
